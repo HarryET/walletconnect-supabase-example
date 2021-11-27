@@ -1,11 +1,11 @@
 import React from "react";
 import WalletConnectProvider from "@walletconnect/ethereum-provider";
 import { Contract, providers, utils } from "ethers";
+import { GoTrueClient } from "@supabase/gotrue-js";
 
 // @ts-ignore
 import logo from "./logo.svg";
 import "./App.css";
-import { formatAuthMessage } from "./utils";
 
 const DAI = {
   address: "q",
@@ -19,6 +19,10 @@ function App() {
   const [address, setAddress] = React.useState<string>("");
   const [provider, setProvider] = React.useState<providers.Web3Provider>();
 
+  const gotrueClient = new GoTrueClient({
+    url: process.env.REACT_APP_GOTRUE_URL
+  })
+
   function reset() {
     console.log("reset");
     setAddress("");
@@ -29,6 +33,7 @@ function App() {
     if (!process.env.REACT_APP_INFURA_ID) {
       throw new Error("Missing Infura Id");
     }
+
     const web3Provider = new WalletConnectProvider({
       infuraId: process.env.REACT_APP_INFURA_ID,
     });
@@ -47,7 +52,16 @@ function App() {
     if (!provider) {
       throw new Error("Provider not connected");
     }
-    const msg = formatAuthMessage(address, chainId);
+    const {data, error} = await gotrueClient.getNonce({
+      wallet_address: address,
+      chain_id: chainId
+    });
+
+    if(error != null) {
+      throw new Error("Error generating nonce!");
+    }
+
+    const msg = data?.nonce!
     const sig = await provider.send("personal_sign", [msg, address]);
     console.log("Signature", sig);
     console.log("isValid", utils.verifyMessage(msg, sig) === address);
