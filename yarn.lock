@@ -1782,7 +1782,7 @@
   resolved "https://registry.yarnpkg.com/@sheerun/mutationobserver-shim/-/mutationobserver-shim-0.3.3.tgz#5405ee8e444ed212db44e79351f0c70a582aae25"
   integrity sha512-DetpxZw1fzPD5xUBrIAoplLChO2VB8DlL5Gg+I1IR9b2wPqYIca2WSUxL5g1vLeR4MsQq1NeWriXAVffV+U1Fw==
 
-"@supabase/gotrue-js@link:./gotrue-js":
+"@supabase/gotrue-js@link:../Supabase/gotrue-js":
   version "0.0.0"
   uid ""
 

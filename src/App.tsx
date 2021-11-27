@@ -1,23 +1,17 @@
 import React from "react";
 import WalletConnectProvider from "@walletconnect/ethereum-provider";
-import { Contract, providers, utils } from "ethers";
-import { GoTrueClient } from "./gotrue-js/src";
+import { providers, utils } from "ethers";
+import { GoTrueClient, User } from "@supabase/gotrue-js";
 
 // @ts-ignore
 import logo from "./logo.svg";
 import "./App.css";
 
-const DAI = {
-  address: "q",
-  abi: [
-    "function transfer(address _to, uint256 _value) returns (bool success)",
-  ],
-};
-
 function App() {
   const [chainId, setChainId] = React.useState<number>(1);
   const [address, setAddress] = React.useState<string>("");
   const [provider, setProvider] = React.useState<providers.Web3Provider>();
+  const [user, setUser] = React.useState<User | null>(null);
 
   const gotrueClient = new GoTrueClient({
     url: process.env.REACT_APP_GOTRUE_URL
@@ -27,6 +21,7 @@ function App() {
     console.log("reset");
     setAddress("");
     setProvider(undefined);
+    setUser(null)
   }
 
   async function connect() {
@@ -48,7 +43,7 @@ function App() {
     setProvider(provider);
   }
 
-  async function signMessage() {
+  async function auth() {
     if (!provider) {
       throw new Error("Provider not connected");
     }
@@ -58,22 +53,36 @@ function App() {
     });
 
     if(error != null) {
-      throw new Error("Error generating nonce!");
+      throw new Error("Error generating nonce: " + error.message);
     }
 
-    const msg = data?.nonce!
-    const sig = await provider.send("personal_sign", [msg, address]);
-    console.log("Signature", sig);
-    console.log("isValid", utils.verifyMessage(msg, sig) === address);
-  }
+    const nonce = data!;
 
-  async function transferDai() {
-    if (!provider) {
-      throw new Error("Provider not connected");
+    const sig = await provider.send("personal_sign", [nonce.nonce, address]);
+
+    const valid = utils.verifyMessage(nonce.nonce, sig) === address;
+    if(!valid) {
+      throw new Error("failed to verify signature on client side!")
     }
-    const contract = new Contract(DAI.address, DAI.abi, provider.getSigner());
-    const res = await contract.transfer(address, utils.parseEther("1"));
-    console.log("res", res);
+
+    console.log(sig);
+    console.log(nonce);
+
+    const {session, error: lerror} = await gotrueClient.signInWithEth({
+      wallet_address: address,
+      nonce,
+      signature: sig
+    })
+
+    if(lerror != null) {
+      throw new Error("Error signing in: " + lerror.message);
+    }
+
+    if(session != null) {
+      setUser(session.user)
+    }
+
+    console.log("Authenticated! 🎉")
   }
 
   return (
@@ -84,8 +93,9 @@ function App() {
         {address ? (
           <>
             <div>{address}</div>
-            <button onClick={signMessage}>Authenticate</button>
-            <button onClick={transferDai}>Transfer DAI</button>
+            <div>{user != null ? <p>Supabase is Authenticated</p> : <p>Supabase is not Authenticated</p>}</div>
+            <button onClick={auth}>Authenticate with Supabase</button>
+            <button onClick={reset}>Logout & Reset</button>
           </>
         ) : (
           <button onClick={connect}>Connect</button>
