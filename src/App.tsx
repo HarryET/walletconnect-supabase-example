@@ -1,7 +1,7 @@
 import React from "react";
 import WalletConnectProvider from "@walletconnect/ethereum-provider";
 import { Contract, providers, utils } from "ethers";
-import { GoTrueClient } from "@supabase/gotrue-js";
+import { GoTrueClient } from "./gotrue-js/src";
 
 // @ts-ignore
 import logo from "./logo.svg";
