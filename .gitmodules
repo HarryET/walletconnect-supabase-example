@@ -1,0 +1,4 @@
+[submodule "src/gotrue-js"]
+	path = src/gotrue-js
+	url = https://github.com/HarryET/gotrue-js.git
+	branch = feat/web3
